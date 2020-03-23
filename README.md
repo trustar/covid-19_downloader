@@ -6,14 +6,16 @@ Steps:
 
     1. Install python 3 on your computer.  
     2. Run "setup.sh".
-    3. Get the config file template from the Python SDK docs: 
+    3. Follow recommendation 2, if it makes sense with your 
+    requirements. 
+    4. Get the config file template from the Python SDK docs: 
     
         https://docs.trustar.co/sdk/TruStar/index.html
     
-    4. Make a config file with your API creds and put it in the 
+    5. Make a config file with your API creds and put it in the 
     "src" directory (same dir as covid_enclave_downloader.py).
     
-    5. run "covid.sh". 
+    6. run "covid.sh". 
 
 "setup.sh" will:
 
@@ -42,10 +44,16 @@ Things to note:
     time it runs.  It does not keep "state" / "checkpoint" of any
     sort.  
     
-Recommendation:
+Recommendations:
 
-    Consider configuring daemon-manager to continuously restart 
+    1. Consider configuring daemon-manager to continuously restart 
     "covid.sh" 30 minutes after it finishes. 
+
+    2. Consider having Station Company Administrator should make 
+    a new user account for this script and use that user acocunt's
+    API credentials.  See  this docs page:
+    
+        https://support.trustar.co/article/g7cjc1nv1d-setting-up-a-service-account
 
     
 DO NOTs: 
@@ -57,3 +65,12 @@ DO NOTs:
     in a second process even if the script is already running in a 
     process and hasn't completed yet.  This will cause all  
     processes running this script to crash. 
+    
+
+Permissions:
+
+    The Station user account whose API credentials are used for 
+    this script (hopefully, it's a service-type user account IAW 
+    Recommendation 2) need to have "view" or greater permissions
+    to the COVID-19 enclave.  It does not need any level of 
+    access to any other enclave. 
