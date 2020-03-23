@@ -1,4 +1,4 @@
 venv
 .DS_store
-private/*
+config_file/private/*
 .idea

@@ -13,7 +13,7 @@ Steps:
         https://docs.trustar.co/sdk/TruStar/index.html
     
     5. Make a config file with your API creds and put it in the 
-    "src" directory (same dir as covid_enclave_downloader.py).
+    "private" directory.  Name the file "trustar.conf"
     
     6. run "covid.sh". 
 
