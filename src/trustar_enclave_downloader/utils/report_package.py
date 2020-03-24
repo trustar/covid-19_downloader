@@ -3,6 +3,7 @@
 from logging import getLogger
 
 from .type_checking import *
+from .report_indicators_fetcher import ReportIndicatorsFetcher
 
 logger = getLogger()                                           # type: Logger
 
@@ -18,9 +19,7 @@ class ReportPackage(object):
         self._indicators = None               # type: List[Indicator] or None
         self._report_tags = None              # type: List[str] or None
 
-    def fetch_indicators_using(self,
-                               ts                            # type: TruStar
-                               ):
+    def fetch_indicators_using(self, ts):           # type: (TruStar) -> None
         """ Hangs the report's indicators. """
         fetcher = ReportIndicatorsFetcher.for_report(self._report)
         self._indicators = fetcher.fetch_using(ts)

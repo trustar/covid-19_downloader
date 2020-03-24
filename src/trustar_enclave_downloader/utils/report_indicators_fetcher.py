@@ -14,7 +14,8 @@ class ReportIndicatorsFetcher(object):
                  ):
         self._report = report               # type: Report
 
-    def for_report(self, report):  # type: (Report) -> ReportIndicatorsFetcher
+    @staticmethod
+    def for_report(report):        # type: (Report) -> ReportIndicatorsFetcher
         """ Factory method, builds a fetcher for a report. """
         return ReportIndicatorsFetcher(report)
 
@@ -52,7 +53,7 @@ class ReportIndicatorsFetcher(object):
     def _log_indicators_fetch_failure(self, e):  # type: (Exception) -> None
         msg = FailureMessages.INDICATOR_FETCH_FAILURE.format(
             self._report.id, self._report.title, e)
-        logger.error(FailureMessages.INDICATOR_FETCH_FAILURE.)
+        logger.error(msg)
 
 
 class FailureMessages(object):

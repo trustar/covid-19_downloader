@@ -3,6 +3,7 @@
 """ Package defining classes needed to download reports from the
 COVID-19 enclave. """
 
-__all__ = ["CovidDownloader"]
 
-from .covid_enclave_downloader import CovidDownloader
+
+from .type_checking import *
+from .enclave_downloader import EnclaveDownloader
