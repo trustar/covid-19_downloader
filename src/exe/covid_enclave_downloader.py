@@ -1,11 +1,22 @@
 # encoding = utf-8
 
-""" The COVID enclave downloader app's main file. """
+"""
+The COVID enclave downloader app's main file.
+
+Before executing this script, run 'setup.sh' shell script found at
+'covid-19_downloader/setup.sh'.
+
+Execute this script using the 'covid.sh' shell script found at
+'covid-19_downloader/exe/covid.sh'
+
+This is an executable, no portion of it is intended to be imported to
+other modules.
+"""
 
 import json
 from collections import OrderedDict
-from logging import getLogger, FileHandler
-from os.path import dirname, abspath, join
+from logging import getLogger, FileHandler, INFO
+from os.path import dirname, abspath, join, basename
 from typing import TYPE_CHECKING
 
 from trustar import TruStar
@@ -13,33 +24,46 @@ from trustar import TruStar
 if TYPE_CHECKING:
     from typing import *
     from trustar import Report, Indicator, Tag
+    from logging import Logger
 
 _COVID_ENCLAVE_ID = 'b0a7be7b-a847-4597-9e1d-20ae18c344ea'
 _EARLIEST_REPORT_UPDATED_TIMESTAMP = 1584082800000
-
-_THIS_DIRECTORY = dirname(abspath(__file__))
-
-_PRIVATE_CONFIG_DIR = join(_THIS_DIRECTORY, '..', '..', 'config_file',
-                           'private')
-_CONFIG_FILE_NAME = 'trustar.conf'
-_CONFIG_FILE_PATH = join(_PRIVATE_CONFIG_DIR, _CONFIG_FILE_NAME)
 _CONFIG_ROLE = 'trustar'
 
-_OUTPUT_DIR = join(_THIS_DIRECTORY, '..', '..', 'output')
+class _Paths(object):
+    """ Holds path name constants. """
+    _THIS_DIR = dirname(abspath(__file__))
+    _THIS_FILE = basename(__file__)
+    _REPO_ROOT = join(_THIS_DIR, '..', '..')
 
-_LOG_DIR = join(_THIS_DIRECTORY, '..', '..', 'logs')
-_LOG_FILE_PATH = join(_LOG_DIR, __file__ + '.log')
+    _PRIVATE_CONFIG_DIR = join(_REPO_ROOT, 'config_file', 'private')
+    _CONFIG_FILE_NAME = 'trustar.conf'
+    CONFIG_FILE_PATH = join(_PRIVATE_CONFIG_DIR, _CONFIG_FILE_NAME)
 
-logger = getLogger(__name__)
+    _LOG_DIR = join(_REPO_ROOT, 'logs')
+    _LOG_FILE_NAME = _THIS_FILE + '.log'
+    LOG_FILE_PATH = join(_LOG_DIR, _LOG_FILE_NAME)
 
-logger.info(_THIS_DIRECTORY)
+    OUTPUT_DIR = join(_REPO_ROOT, 'output')
 
 
+class _CovidLogger(object):
+    """ A class to hold a logger factory method. """
+    @staticmethod
+    def build():                                          # type: () -> Logger
+        """ Builds the logger. """
+        covid_logger = getLogger(__name__)                      # type: Logger
+        fh = FileHandler(_Paths.LOG_FILE_PATH)
+        fh.setLevel(INFO)
+        covid_logger.addHandler(fh)
+        return covid_logger
 
+
+logger = _CovidLogger.build()                                   # type: Logger
 
 
 class _ReportPackage(object):
-    """ Data Struct to keep a Report, its Tags, and its Indicators together. """
+    """ Data Struct to keep a Report, its Tags, and its Indicators together."""
     def __init__(self,
                  report,                               # type: Report
                  tag_names,                            # type: List[str]
@@ -49,7 +73,7 @@ class _ReportPackage(object):
         self.tag_names = tag_names
         self.indicators = indicators
 
-    def to_dict(self):  # type: (_ReportPackage) -> OrderedDict
+    def to_dict(self):                 # type: (_ReportPackage) -> OrderedDict
         """ Converts the report, its indicators, and its tags to a JSON str.
         """
         d = OrderedDict()
@@ -58,6 +82,7 @@ class _ReportPackage(object):
         d['indicators'] = [indicator.to_dict(remove_nones=True) for
                            indicator in self.indicators]
         return d
+
 
 def _main():
 
@@ -71,7 +96,7 @@ def _main():
 
 def _build_trustar_client():                             # type: () -> TruStar
     """ Builds the TruSTAR Client. """
-    return TruStar(config_file=_CONFIG_FILE_PATH,
+    return TruStar(config_file=_Paths.CONFIG_FILE_PATH,
                    config_role=_CONFIG_ROLE)
 
 def _get_reports(ts):                        # type: (TruStar) -> List[Report]
@@ -120,7 +145,7 @@ def _build_package(ts,                         # type: TruStar
                    ):                          # type: (...) -> _ReportPackage
     """ Builds ReportPackage object. """
     _log_building_package_for(report)
-    package =  _ReportPackage(report,
+    package = _ReportPackage(report,
                              _get_tags(ts, report),
                              _get_indicators(ts, report))
     _log_done_building_package_for(report)
@@ -144,8 +169,8 @@ def _get_indicators(ts,                       # type: TruStar
     indicators = _indicators_gen_to_list(gen, report)   # type: List[Indicator]
     return indicators
 
-def _indicators_gen_to_list(gen,
-                            report
+def _indicators_gen_to_list(gen,                  # type: Generator[Indicator]
+                            report                # type: Report
                             ):
     """ Downloads indicators from generator to list. """
     _log_fetching_indicators_for(report)
@@ -258,7 +283,7 @@ def _log_has_no_tags(report):                         # type: (Report) -> None
 def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
     filename = '{}_{}_{}.json'.format(report.updated, report.title, report.id)
-    return join(_OUTPUT_DIR, filename)
+    return join(_Paths.OUTPUT_DIR, filename)
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
     """ Writes the report to file. """
@@ -274,6 +299,7 @@ def _log_writing_to(filepath):
 def _log_done_writing_file():
     """ Writes log message. """
     logger.info("Done writing file.")
+
 
 if __name__ == "__main__":
 

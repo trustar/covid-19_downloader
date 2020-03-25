@@ -6,16 +6,11 @@ Steps:
 
     1. Install python 3 on your computer.  
     2. Run "setup.sh".
-    3. Follow recommendation 2, if it makes sense with your 
-    requirements. 
-    4. Get the config file template from the Python SDK docs: 
-    
-        https://docs.trustar.co/sdk/TruStar/index.html
-    
-    5. Make a config file with your API creds and put it in the 
+    3. Follow recommendation 2 (below), if it makes sense with your 
+    requirements.     
+    4. Make a config file with your API creds and put it in the 
     "private" directory.  Name the file "trustar.conf"
-    
-    6. run "covid.sh". 
+    5. run "covid.sh". 
 
 "setup.sh" will:
 
@@ -24,6 +19,8 @@ Steps:
     -install the dependencies listed in requirements.txt into the 
     new virtual environment. 
     -deactivate the new virtual environment. 
+    -copy the spec config file to the "private" dir, where the user can
+    rename it and enter their API credentials into it. 
     
 "covid.sh" will:
 
@@ -36,11 +33,18 @@ Things to note:
 
     1. If a report file already exists in the output directory, it
     will be overwritten with what the script downloads on the 
-    current run.  This keeps the reports in the output dir 
-    up-to-date with the most-current version in the COVID-19 
-    enclave. 
+    current run.  
     
-    2. This script will download all reports in the enclave every 
+    2.  If a report in the unclave is updated and you don't delete
+    the reports from "output" directory before running the script 
+    again, you will get a second file in the 'output' directory that
+    contains the same report.  One file will be the file creted on 
+    a previous script-run, the second will be the update to that 
+    report.  Recommended best-practice for the general use-case for
+    this script is to delete all files from the 'output' directory
+    before running the script again. 
+    
+    3. This script will download all reports in the enclave every 
     time it runs.  It does not keep "state" / "checkpoint" of any
     sort.  
     
@@ -55,6 +59,8 @@ Recommendations:
     
         https://support.trustar.co/article/g7cjc1nv1d-setting-up-a-service-account
 
+    3. Recommend deleting everything from the 'output' directory before
+    running the script again.  See "Things to Note" item 2. 
     
 DO NOTs: 
 
@@ -69,8 +75,18 @@ DO NOTs:
 
 Permissions:
 
+    1. Station user account. 
+    
     The Station user account whose API credentials are used for 
     this script (hopefully, it's a service-type user account IAW 
     Recommendation 2) need to have "view" or greater permissions
     to the COVID-19 enclave.  It does not need any level of 
     access to any other enclave. 
+    
+    
+    2. OS user account. 
+    
+    The operating system user account used to launch this script will 
+    need to be able to read/write/execute files in the directory that 
+    this repo resides in.  It writes output to the 'output' directory, 
+    and log files to the 'logs' directory. 

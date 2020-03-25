@@ -7,3 +7,4 @@ output/*.*
 output/*
 logs/*.*
 logs/*
+*.log
