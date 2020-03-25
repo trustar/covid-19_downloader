@@ -28,8 +28,15 @@ _CONFIG_ROLE = 'trustar'
 _OUTPUT_DIR = join(_THIS_DIRECTORY, '..', '..', 'output')
 
 _LOG_DIR = join(_THIS_DIRECTORY, '..', '..', 'logs')
+_LOG_FILE_PATH = join(_LOG_DIR, __file__ + '.log')
 
 logger = getLogger(__name__)
+
+logger.info(_THIS_DIRECTORY)
+
+
+
+
 
 class _ReportPackage(object):
     """ Data Struct to keep a Report, its Tags, and its Indicators together. """
@@ -82,8 +89,8 @@ def _report_gen_to_list(gen                     # type: Generator[Report]
                         ):                      # type: (...) -> List[Report]
     """ Downloads reports from generator to list. """
     _log_starting_report_download()
-    reports = []
-    for report in gen:
+    reports = []                                         # type: List[Report]
+    for report in gen:                                   # type: Report
         reports.append(report)
         _log_added_report(report)
     _log_done_downloading_reports(len(reports))
@@ -104,7 +111,6 @@ def _log_done_downloading_reports(n_reports):            # type: (int) -> None
     msg = ("Done downloading reports.  Downloaded '{}' reports."
            .format(str(n_reports)))
     logger.info(msg)
-
 
 def _build_package(ts,                         # type: TruStar
                    report                      # type: Report
@@ -132,20 +138,21 @@ def _get_indicators(ts,                       # type: TruStar
                     report                    # type: Report
                     ):                        # type: (...) -> List[Indicator]
     """ Builds a list of the report's indicators. """
-    _log_fetching_indicators_for(report)
-    indicators = []
-    try:
-        gen = ts.get_indicators_for_report(report.id)  # type: Generator[Indicator]
-        for indicator in gen:
-            indicators.append(indicator)
-        if indicators:
-            _log_found_indicators_for(report, len(indicators))
-        else:
-            _log_has_no_indicators(report)
+    gen = ts.get_indicators_for_report(report.id)  # type: Generator[Indicator]
+    indicators = _indicators_gen_to_list(gen, report)   # type: List[Indicator]
+    return indicators
 
+def _indicators_gen_to_list(gen,
+                            report
+                            ):
+    """ Downloads indicators from generator to list. """
+    _log_fetching_indicators_for(report)
+    try:
+        indicators = list(gen)
+        _log_indicator_fetch_results(report, indicators)
     except Exception as e:
         _log_fetching_indicators_failed_for(report, e)
-
+        indicators = []
     return indicators
 
 def _log_fetching_indicators_for(report):             # type: (Report) -> None
@@ -153,6 +160,15 @@ def _log_fetching_indicators_for(report):             # type: (Report) -> None
     msg = ("Fetching indicators for report updated '{}', title '{}', id "
            "'{}'".format(report.updated, report.title, report.id))
     logger.info(msg)
+
+def _log_indicator_fetch_results(report,            # type: Report
+                                 indicators         # type: List[Indicator]
+                                 ):
+    """ Selects appropriate log message to write. """
+    if indicators:
+        _log_found_indicators_for(report, len(indicators))
+    else:
+        _log_has_no_indicators(report)
 
 def _log_found_indicators_for(report,                          # type: Report
                               n_indicators                     # type: int
@@ -189,10 +205,10 @@ def _fetch_tags(ts,                                 # type: TruStar
     try:
         tags = ts.get_enclave_tags(report.id)                # type: List[Tag]
         _log_fetching_tags_succeeded_for(report)
-        return tags
     except Exception as e:
         _log_fetching_tags_failed_for(report, e)
-        return []
+        tags = []
+    return tags
 
 def _log_fetching_tags_for(report):                   # type: (Report) -> None
     """ Writes log message. """
@@ -219,10 +235,10 @@ def _extract_tag_names_from(tags, report):
     if tags:
         tag_names = [tag.name for tag in tags]
         _log_found_tags_for(report, tag_names)
-        return tag_names
     else:
         _log_has_no_tags(report)
-        return []
+        tag_names = []
+    return tag_names
 
 def _log_found_tags_for(report,                             # type: Report
                         tag_names                           # type: List[str]
