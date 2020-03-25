@@ -4,7 +4,7 @@
 
 import json
 from collections import OrderedDict
-from logging import getLogger
+from logging import getLogger, FileHandler
 from os.path import dirname, abspath, join
 from typing import TYPE_CHECKING
 
@@ -64,10 +64,9 @@ def _main():
     ts = _build_trustar_client()                          # type: TruStar
     reports = _get_reports(ts)                            # type: List[Report]
 
-    for report in reports:                             # type: Report
+    for report in reports:                              # type: Report
         package = _build_package(ts, report)            # type: _ReportPackage
-        filename = _filename_from(package.report)       # type: str
-        path = _path_from(filename)                     # type: str
+        path = _path_from(report)                       # type: str
         _write_to_file(package.to_dict(), path)
 
 def _build_trustar_client():                             # type: () -> TruStar
@@ -89,11 +88,15 @@ def _report_gen_to_list(gen                     # type: Generator[Report]
                         ):                      # type: (...) -> List[Report]
     """ Downloads reports from generator to list. """
     _log_starting_report_download()
-    reports = []                                         # type: List[Report]
-    for report in gen:                                   # type: Report
+    reports = _convert(gen)                               # type: List[Report]
+    _log_done_downloading_reports(len(reports))
+    return reports
+
+def _convert(report_gen):
+    reports = []
+    for report in report_gen:                                   # type: Report
         reports.append(report)
         _log_added_report(report)
-    _log_done_downloading_reports(len(reports))
     return reports
 
 def _log_starting_report_download():
@@ -133,7 +136,6 @@ def _log_done_building_package_for(report):           # type: (Report) -> None
     msg = "Done building package for report ID '{}'".format(report.id)
     logger.info(msg)
 
-
 def _get_indicators(ts,                       # type: TruStar
                     report                    # type: Report
                     ):                        # type: (...) -> List[Indicator]
@@ -151,8 +153,8 @@ def _indicators_gen_to_list(gen,
         indicators = list(gen)
         _log_indicator_fetch_results(report, indicators)
     except Exception as e:
-        _log_fetching_indicators_failed_for(report, e)
         indicators = []
+        _log_fetching_indicators_failed_for(report, e)
     return indicators
 
 def _log_fetching_indicators_for(report):             # type: (Report) -> None
@@ -206,8 +208,8 @@ def _fetch_tags(ts,                                 # type: TruStar
         tags = ts.get_enclave_tags(report.id)                # type: List[Tag]
         _log_fetching_tags_succeeded_for(report)
     except Exception as e:
-        _log_fetching_tags_failed_for(report, e)
         tags = []
+        _log_fetching_tags_failed_for(report, e)
     return tags
 
 def _log_fetching_tags_for(report):                   # type: (Report) -> None
@@ -236,8 +238,8 @@ def _extract_tag_names_from(tags, report):
         tag_names = [tag.name for tag in tags]
         _log_found_tags_for(report, tag_names)
     else:
-        _log_has_no_tags(report)
         tag_names = []
+        _log_has_no_tags(report)
     return tag_names
 
 def _log_found_tags_for(report,                             # type: Report
@@ -253,13 +255,9 @@ def _log_has_no_tags(report):                         # type: (Report) -> None
     msg = ("Report ID '{}' has no tags.".format(report.id))
     logger.info(msg)
 
-def _filename_from(report):                            # type: (Report) -> str
-    """ Builds the filename from the report. """
-    filename = '{}_{}_{}.json'.format(report.updated, report.title, report.id)
-    return filename
-
-def _path_from(filename):                                 # type: (str) -> str
+def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
+    filename = '{}_{}_{}.json'.format(report.updated, report.title, report.id)
     return join(_OUTPUT_DIR, filename)
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
