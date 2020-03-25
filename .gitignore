@@ -1,4 +1,9 @@
 venv
 .DS_store
+config_file/private/*.*
 config_file/private/*
 .idea
+output/*.*
+output/*
+logs/*.*
+logs/*
