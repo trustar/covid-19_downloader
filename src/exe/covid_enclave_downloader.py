@@ -3,12 +3,6 @@
 """
 The COVID enclave downloader app's main file.
 
-Before executing this script, run 'setup.sh' shell script found at
-'covid-19_downloader/setup.sh'.
-
-Execute this script using the 'covid.sh' shell script found at
-'covid-19_downloader/exe/covid.sh'
-
 This is an executable, no portion of it is intended to be imported to
 other modules.
 """
