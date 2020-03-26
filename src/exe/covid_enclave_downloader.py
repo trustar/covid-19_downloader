@@ -15,8 +15,9 @@ other modules.
 
 import json
 from collections import OrderedDict
-from logging import getLogger, FileHandler, INFO
-from os.path import dirname, abspath, join, basename
+from logging import getLogger, FileHandler, Formatter, INFO
+from os.path import dirname, abspath, join, basename, normpath, exists
+from os import makedirs
 from typing import TYPE_CHECKING
 
 from trustar import TruStar
@@ -34,18 +35,20 @@ class _Paths(object):
     """ Holds path name constants. """
     _THIS_DIR = dirname(abspath(__file__))
     _THIS_FILE = basename(__file__)
-    _REPO_ROOT = join(_THIS_DIR, '..', '..')
+    _REPO_ROOT = normpath(join(_THIS_DIR, '..', '..'))
 
     _PRIVATE_CONFIG_DIR = join(_REPO_ROOT, 'config_file', 'private')
     _CONFIG_FILE_NAME = 'trustar.conf'
     CONFIG_FILE_PATH = join(_PRIVATE_CONFIG_DIR, _CONFIG_FILE_NAME)
 
     _LOG_DIR = join(_REPO_ROOT, 'logs')
-    _LOG_FILE_NAME = _THIS_FILE + '.log'
-    LOG_FILE_PATH = join(_LOG_DIR, _LOG_FILE_NAME)
+    LOG_FILE_PATH = join(_LOG_DIR, 'covid.log')
+    if not exists(_LOG_DIR):
+        makedirs(_LOG_DIR)
 
     OUTPUT_DIR = join(_REPO_ROOT, 'output')
-
+    if not exists(OUTPUT_DIR):
+        makedirs(OUTPUT_DIR)
 
 class _CovidLogger(object):
     """ A class to hold a logger factory method. """
@@ -54,7 +57,9 @@ class _CovidLogger(object):
         """ Builds the logger. """
         covid_logger = getLogger(__name__)                      # type: Logger
         fh = FileHandler(_Paths.LOG_FILE_PATH)
+        formatter = Formatter('%(asctime)15s - %(name)s - %(levelname)s - %(message)s')
         fh.setLevel(INFO)
+        fh.setFormatter(formatter)
         covid_logger.addHandler(fh)
         return covid_logger
 
@@ -282,7 +287,7 @@ def _log_has_no_tags(report):                         # type: (Report) -> None
 
 def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
-    filename = '{}_{}_{}.json'.format(report.updated, report.title, report.id)
+    filename = '{}_{}_{}.json'.format(report.updated, report.title.strip(), report.id)
     return join(_Paths.OUTPUT_DIR, filename)
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
