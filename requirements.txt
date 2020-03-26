@@ -1,1 +1,1 @@
-trustar
+trustar==0.3.*
