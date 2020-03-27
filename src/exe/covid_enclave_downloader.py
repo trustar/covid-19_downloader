@@ -84,19 +84,21 @@ class _ReportPackage(object):
 
 
 def _main():
-
-    ts = _build_trustar_client()                          # type: TruStar
-    reports = _get_reports(ts)                            # type: List[Report]
+    """ The script's main logic. """
+    ts = _build_ts_client()                                # type: TruStar
+    reports = _get_reports(ts)                           # type: List[Report]
 
     for report in reports:                              # type: Report
         package = _build_package(ts, report)            # type: _ReportPackage
         path = _path_from(report)                       # type: str
         _write_to_file(package.to_dict(), path)
 
-def _build_trustar_client():                             # type: () -> TruStar
+def _build_ts_client():                                  # type: () -> TruStar
     """ Builds the TruSTAR Client. """
-    return TruStar(config_file=_Paths.CONFIG_FILE_PATH,
-                   config_role=_CONFIG_ROLE)
+    ts = TruStar(config_file=_Paths.CONFIG_FILE_PATH,
+                 config_role=_CONFIG_ROLE)
+    ts._client.client_metatag = "COVID-19"
+    return ts
 
 def _get_reports(ts):                        # type: (TruStar) -> List[Report]
     """ Builds a list of the reports in the enclave. """
@@ -116,7 +118,8 @@ def _report_gen_to_list(gen                     # type: Generator[Report]
     _log_done_downloading_reports(len(reports))
     return reports
 
-def _convert(report_gen):
+def _convert(report_gen):          # type: (Generator[Report]) -> List[Report]
+    """ Downloads reports from generator to list. """
     reports = []
     for report in report_gen:                                   # type: Report
         reports.append(report)
