@@ -83,20 +83,32 @@ class _ReportPackage(object):
         return d
 
 
-def _main():
+class _TS(TruStar):
+    def set_metatag(self, metatag):                      # type: (str) -> None
+        """ Sets the client metatag. """
+        self._client.client_metatag = metatag
 
-    ts = _build_trustar_client()                          # type: TruStar
-    reports = _get_reports(ts)                            # type: List[Report]
+def _main():
+    """ The script's main logic. """
+    ts = _ts_client_from_file()                          # type: _TS
+    ts.set_metatag("COVID-19")
+
+    reports = _get_reports(ts)                           # type: List[Report]
 
     for report in reports:                              # type: Report
         package = _build_package(ts, report)            # type: _ReportPackage
         path = _path_from(report)                       # type: str
         _write_to_file(package.to_dict(), path)
 
-def _build_trustar_client():                             # type: () -> TruStar
+def _ts_client_from_file():                             # type: () -> _TS
     """ Builds the TruSTAR Client. """
-    return TruStar(config_file=_Paths.CONFIG_FILE_PATH,
-                   config_role=_CONFIG_ROLE)
+    return _TS(config_file=_Paths.CONFIG_FILE_PATH,
+               config_role=_CONFIG_ROLE)
+
+def _set_metatag(ts):                             # type: (TruStar) -> TruStar
+    """ Sets the client's 'client_metatag'. """
+    ts._client.client_metatag = "COVID-19"
+    return ts
 
 def _get_reports(ts):                        # type: (TruStar) -> List[Report]
     """ Builds a list of the reports in the enclave. """
