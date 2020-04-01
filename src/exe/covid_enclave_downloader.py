@@ -13,7 +13,8 @@ from logging import getLogger, FileHandler, Formatter, INFO
 from os.path import dirname, abspath, join, basename, normpath, exists
 from os import makedirs
 from string import ascii_letters, digits
-import unicodedata
+from pathvalidate import sanitize_filename
+
 from typing import TYPE_CHECKING
 
 from trustar import TruStar
@@ -299,35 +300,8 @@ def _log_has_no_tags(report):                         # type: (Report) -> None
 def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
     dirty = '{}_{}_{}.json'.format(report.updated, report.title.strip(), report.id)
-    clean = _clean_filename(dirty)
+    clean = sanitize_filename(dirty)
     return join(_Paths.OUTPUT_DIR, clean)
-
-def _clean_filename(dirty):                               # type: (str) -> str
-    """ Removes chars not allowed in the OS's filenames. """
-    dirty = _remove_leading_trailing_whitespaces(dirty)          # type: str
-    unaccented = _convert_accented_chars(dirty)                  # type: str
-    ascii_compatible = _replace_nonascii_chars(unaccented)       # type: str
-    stripped = _remove_leading_trailing_whitespaces(ascii_compatible)  # type: str
-    cleaned = _replace_remaining_nonallowed_chars(stripped)      # type: str
-    return _remove_leading_trailing_whitespaces(cleaned)
-
-def _remove_leading_trailing_whitespaces(s):              # type: (str) -> str
-    """ Removes leading & trailing whitespaces from a string. """
-    return s.strip()
-
-def _convert_accented_chars(s):                           # type: (str) -> str
-    """ Converts accented characters to their unaccented equivalents. """
-    return unicodedata.normalize('NFKD', s)
-
-def _replace_nonascii_chars(s):                           # type: (str) -> str
-    """ Replaces non-ASCII characters with a question-mark. """
-    b = s.encode('ASCII', 'replace')
-    return b.decode()
-
-def _replace_remaining_nonallowed_chars(s):         # type: (str) -> str
-    """ Replaces not-allwed-in-filename characters with underscore. """
-    return ''.join([str(c) if str(c) in _CHARS_ALLOWED_IN_FILENAMES else
-                    '_' for c in s])
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
     """ Writes the report to file. """
