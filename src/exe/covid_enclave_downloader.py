@@ -301,6 +301,7 @@ def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
     dirty = '{}_{}_{}.json'.format(report.updated, report.title.strip(), report.id)
     clean = sanitize_filename(dirty)
+    clean = clean.replace(' ', '_')
     return join(_Paths.OUTPUT_DIR, clean)
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
