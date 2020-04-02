@@ -12,6 +12,9 @@ from collections import OrderedDict
 from logging import getLogger, FileHandler, Formatter, INFO
 from os.path import dirname, abspath, join, basename, normpath, exists
 from os import makedirs
+from string import ascii_letters, digits
+from pathvalidate import sanitize_filename
+
 from typing import TYPE_CHECKING
 
 from trustar import TruStar
@@ -24,6 +27,7 @@ if TYPE_CHECKING:
 _COVID_ENCLAVE_ID = 'b0a7be7b-a847-4597-9e1d-20ae18c344ea'
 _EARLIEST_REPORT_UPDATED_TIMESTAMP = 1584082800000
 _CONFIG_ROLE = 'trustar'
+_CHARS_ALLOWED_IN_FILENAMES = "-_.()%s%s" % (ascii_letters, digits)
 
 class _Paths(object):
     """ Holds path name constants. """
@@ -85,18 +89,16 @@ class _ReportPackage(object):
 
 def _main():
     """ The script's main logic. """
-    ts = _build_ts_client()                                # type: TruStar
+    ts = _build_ts_client()                              # type: TruStar
     reports = _get_reports(ts)                           # type: List[Report]
-
-    for report in reports:                              # type: Report
-        package = _build_package(ts, report)            # type: _ReportPackage
-        path = _path_from(report)                       # type: str
-        _write_to_file(package.to_dict(), path)
+    _process_reports(ts, reports)
 
 def _build_ts_client():                                  # type: () -> TruStar
     """ Builds the TruSTAR Client. """
     ts = TruStar(config_file=_Paths.CONFIG_FILE_PATH,
                  config_role=_CONFIG_ROLE)
+
+    # noinspection PyProtectedMember
     ts._client.client_metatag = "COVID-19"
     return ts
 
@@ -125,6 +127,20 @@ def _convert(report_gen):          # type: (Generator[Report]) -> List[Report]
         reports.append(report)
         _log_added_report(report)
     return reports
+
+def _process_reports(ts, reports):     # type: (TruStar, List[Report]) -> None
+    """ Try/Except wrapper around '_process_report()'. """
+    for report in reports:                                      # type: Report
+        try:
+            _process_report(ts, report)
+        except Exception as e:
+            _log_report_failed(report, e)
+
+def _process_report(ts, report):             # type: (TruStar, Report) -> None
+    """ Processor for single report. """
+    package = _build_package(ts, report)            # type: _ReportPackage
+    path = _path_from(report)                       # type: str
+    _write_to_file(package.to_dict(), path)
 
 def _log_starting_report_download():
     """ Writes log message. """
@@ -244,7 +260,7 @@ def _log_fetching_tags_for(report):                   # type: (Report) -> None
     msg = ("Fetching tags for report ID '{}'.".format(report.id))
     logger.info(msg)
 
-def _log_fetching_tags_succeeded_for(report):
+def _log_fetching_tags_succeeded_for(report):         # type: (Report) -> None
     """ Writes log msg. """
     msg = ("Fetch tags API call succeeded for report ID '{}'."
            .format(report.id))
@@ -257,7 +273,6 @@ def _log_fetching_tags_failed_for(report,               # type: Report
     msg = ("Error:  Fetching tags failed for report ID '{}'.  Exception "
            "message:  '{}'.".format(report.id, e))
     logger.error(msg)
-
 
 def _extract_tag_names_from(tags, report):
     """ Gets tag names from Tag objects. """
@@ -284,8 +299,9 @@ def _log_has_no_tags(report):                         # type: (Report) -> None
 
 def _path_from(report):                                # type: (Report) -> str
     """ Builds the output file path. """
-    filename = '{}_{}_{}.json'.format(report.updated, report.title.strip(), report.id)
-    return join(_Paths.OUTPUT_DIR, filename)
+    dirty = '{}_{}_{}.json'.format(report.updated, report.title.strip(), report.id)
+    clean = sanitize_filename(dirty)
+    return join(_Paths.OUTPUT_DIR, clean)
 
 def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
     """ Writes the report to file. """
@@ -294,13 +310,19 @@ def _write_to_file(report_dict, filepath):  # type: (OrderedDict, str) -> None
         json.dump(report_dict, f, indent=4)
     _log_done_writing_file()
 
-def _log_writing_to(filepath):
+def _log_writing_to(filepath):                           # type: (str) -> None
     """ Writes log message. """
     logger.info("Writing to file '{}'.".format(filepath))
 
 def _log_done_writing_file():
     """ Writes log message. """
     logger.info("Done writing file.")
+
+def _log_report_failed(report, e):        # type: (Report, Exception) -> None
+    """ Writes log message. """
+    msg = ("Processing failed for report ID '{}', title '{}'.  Exception "
+           "message:  '{}'.".format(report.id, report.title, e))
+    logger.error(msg)
 
 
 if __name__ == "__main__":

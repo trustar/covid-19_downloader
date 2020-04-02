@@ -1,1 +1,2 @@
 trustar==0.3.*
+pathvalidate>=2.2.2
