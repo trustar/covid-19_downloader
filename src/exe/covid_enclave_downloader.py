@@ -7,22 +7,30 @@ This is an executable, no portion of it is intended to be imported to
 other modules.
 """
 
+# this should match the most-recent git tag.
+__version__ = '1.0.1'
+
 import json
 from collections import OrderedDict
 from logging import getLogger, FileHandler, Formatter, INFO
 from os.path import dirname, abspath, join, basename, normpath, exists
 from os import makedirs
 from string import ascii_letters, digits
+from sys import version_info
+
 from pathvalidate import sanitize_filename
-
-from typing import TYPE_CHECKING
-
 from trustar import TruStar
 
-if TYPE_CHECKING:
-    from typing import *
-    from trustar import Report, Indicator, Tag
-    from logging import Logger
+# typing library was added to stdlib in Python3.5, and is only used
+# for dev in an IDE.
+if (version_info.major == 3 and version_info.minor >= 5) or version_info.major > 3:
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from typing import *
+        from trustar import Report, Indicator, Tag
+        from logging import Logger
+
+
 
 _COVID_ENCLAVE_ID = 'b0a7be7b-a847-4597-9e1d-20ae18c344ea'
 _EARLIEST_REPORT_UPDATED_TIMESTAMP = 1584082800000
